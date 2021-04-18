@@ -1,0 +1,10 @@
+[package]
+name = "stream"
+version = "0.1.0"
+authors = ["Colton Donnelly <colton@donn.io>"]
+edition = "2018"
+
+[dependencies]
+clap = { version = "2", features = [] }
+either = "1"
+nom = "6"
