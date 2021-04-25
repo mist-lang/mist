@@ -7,4 +7,6 @@ edition = "2018"
 [dependencies]
 clap = { version = "2", features = [] }
 either = "1"
-nom = "6"
+handlebars = "3"
+nom = "6.1"
+once_cell = "1"
