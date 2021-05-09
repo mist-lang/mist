@@ -14,7 +14,7 @@ fn main() {
 	).get_matches();
 
 	let input_file = matches.value_of("INPUT").expect("No input file argument passed?");
-	let parsed = stream::ast::File::read(input_file).unwrap_or_else(|err| {
+	let parsed = mist::ast::File::read(input_file).unwrap_or_else(|err| {
 		println!("Failed to parse file:\n{}", err);
 		exit(1);
 	});
