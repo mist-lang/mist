@@ -7,7 +7,7 @@ use nom::character::complete::alpha1;
 use nom::character::complete::alphanumeric0;
 use nom::character::complete::digit1;
 use nom::character::complete::multispace0;
-use nom::character::complete::space0;
+use nom::character::complete::multispace1;
 
 impl File {
 	pub fn read(path: impl AsRef<Path>) -> Result<Self, String> {
@@ -43,7 +43,18 @@ impl Ident {
 impl Item {
 	named!(pub parse<&str, Item>,
 		alt!(
-			map!(Fun::parse, Item::Fun)
+			map!(Fun::parse, |fun| Item::Fun(Box::new(fun)))
+		)
+	);
+}
+
+impl Type {
+	// TODO: `parse` is reserved for parsing type declarations
+
+	named!(pub name<&str, Type>,
+		alt!(
+			value!(Type::Int, tag!("int"))
+			| value!(Type::Bool, tag!("bool"))
 		)
 	);
 }
@@ -51,32 +62,78 @@ impl Item {
 impl Fun {
 	named!(pub parse<&str, Fun>,
 		map!(tuple!(
-			recognize!(tuple!(multispace0, tag!("fun"), space0)),
+			delimited!(multispace0, tag!("fun"), multispace0),
 			Ident::parse,
-			recognize!(tuple!(space0, tag!("="), space0)),
+			preceded!(pair!(tag!(":"), multispace0), Type::name),
+			delimited!(multispace0, tag!("="), multispace0),
 			Expr::parse,
-			recognize!(tuple!(space0, tag!(";")))
-		), Fun::from_assignfn_parts)
+			recognize!(tuple!(multispace0, tag!(";")))
+		), |(_, name, out_ty, _, expr, _)| Fun {
+			name,
+			out_ty,
+			eval: Either::Left(expr),
+		})
 	);
 }
 
-impl Fun {
-	pub fn from_assignfn_parts((_fun, name, _eq, expr, _semi): (&str, Ident, &str, Expr, &str)) -> Self {
-		Fun {
-			name,
-			eval: Either::Left(expr),
-		}
-	}
+impl Block {
+	named!(pub parse<&str, Block>,
+		map!(
+			tuple!(
+				tag!("{"),
+				multispace0,
+				Expr::parse,
+				multispace0,
+				tag!("}")
+			),
+			|(_, _, expr, _, _)| Block {
+				stmts: Vec::new(),
+				expr: Some(expr),
+			}
+		)
+	);
 }
 
 impl Expr {
 	named!(pub parse<&str, Expr>,
 		alt!(
-			map!(Expr::num, Expr::Num)
+			map!(Expr::boolean, Expr::Bool)
+			| map!(Expr::int, Expr::Int)
+			| map!(If::parse, Expr::If)
 		)
 	);
 
-	named!(num<&str, u64>,
+	named!(boolean<&str, bool>,
+		alt!(
+			value!(true, tag!("true"))
+			| value!(false, tag!("false"))
+		)
+	);
+
+	named!(int<&str, u64>,
 		map!(digit1, |input| input.parse::<u64>().unwrap())
+	);
+}
+
+impl If {
+	named!(parse<&str, If>,
+		map!(
+			tuple!(
+				tag!("if"),
+				multispace1,
+				Expr::parse,
+				delimited!(multispace0, Block::parse, multispace0),
+				tag!("else"),
+				multispace1,
+				alt!(
+					map!(If::parse, Either::Right)
+					| map!(Block::parse, Either::Left)
+				)
+			), |(_, _, cond, then, _, _, el)| If(
+				Box::new(cond),
+				Box::new(then),
+				Box::new(el)
+			)
+		)
 	);
 }

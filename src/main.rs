@@ -14,8 +14,12 @@ fn main() {
 	).get_matches();
 
 	let input_file = matches.value_of("INPUT").expect("No input file argument passed?");
-	let parsed = mist::ast::File::read(input_file).unwrap_or_else(|err| {
+	let mut parsed = mist::ast::File::read(input_file).unwrap_or_else(|err| {
 		println!("Failed to parse file:\n{}", err);
+		exit(1);
+	});
+	parsed.type_check().unwrap_or_else(|err| {
+		println!("Failed to type-check:\n{}", err);
 		exit(1);
 	});
 	let webassembly = parsed.to_wasm_program();

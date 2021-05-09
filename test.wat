@@ -9,12 +9,17 @@
 	)
 
 	
-(func $main (result i32)
+(func $x (result i32)
 	(return (i32.const 7))
 )
-			
-(func $x (result i32)
-	(return (i32.const 4))
+
+(func $main (result i32)
+	(return (if (result i32)
+	(i32.const 0)
+	(then (i32.const 8))
+	(else (i32.const 6))
 )
-			
+)
+)
+
 )

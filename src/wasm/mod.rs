@@ -17,6 +17,7 @@ pub enum Type {
 pub enum Expr {
 	Return(Box<Expr>),
 	Const(Type, String),
+	If(Box<Expr>, Option<Type>, Box<Expr>, Box<Expr>),
 }
 
 pub enum Lit {

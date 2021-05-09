@@ -40,7 +40,7 @@ impl Func {
 (func ${{name}} (result {{result}})
 	{{expr}}
 )
-			").unwrap();
+").unwrap();
 			bars
 		});
 
@@ -67,6 +67,20 @@ impl Expr {
 			let mut bars = Handlebars::new();
 			bars.register_template_string("return", "(return {{expr}})").unwrap();
 			bars.register_template_string("const", "({{ty}}.const {{val}})").unwrap();
+			bars.register_template_string("if-expr", "\
+(if (result {{ty}})
+	{{cond}}
+	(then {{then}})
+	(else {{el}})
+)
+").unwrap();
+			bars.register_template_string("if-stmt", "\
+(if
+	({{cond}})
+	(then {{then}})
+	(else {{el}})
+)
+").unwrap();
 			bars
 		});
 
@@ -81,6 +95,18 @@ impl Expr {
 				data.insert("ty", format!("{}", ty));
 				data.insert("val", val.clone());
 				"const"
+			},
+			If(cond, ty, then, el) => {
+				let fmt = if let Some(ty) = ty {
+					data.insert("ty", format!("{}", ty));
+					"if-expr"
+				} else {
+					"if-stmt"
+				};
+				data.insert("cond", cond.to_wat());
+				data.insert("then", then.to_wat());
+				data.insert("el", el.to_wat());
+				fmt
 			},
 		};
 		TEMPLATES.render(template, &data).unwrap()
