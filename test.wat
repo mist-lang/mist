@@ -8,15 +8,25 @@
 		(call $proc_exit (call $main))
 	)
 
+	(global $seven i32 (i32.const 7))
 	
 (func $x (result i32)
 	(return (i32.const 7))
 )
 
+	(func $main (result i32)
+		(return
+			(if (result i32)
+				(then (i32.const 0))
+				(else (i32.add (i32.const 3) (i32.const 1)))
+			)
+		)
+	)
+
 (func $main (result i32)
 	(return (if (result i32)
-	(i32.const 0)
-	(then (i32.const 8))
+	(i32.const 1)
+	(then (global.get $seven))
 	(else (i32.const 6))
 )
 )

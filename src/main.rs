@@ -18,19 +18,19 @@ fn main() {
 		println!("Failed to parse file:\n{}", err);
 		exit(1);
 	});
-	parsed.type_check().unwrap_or_else(|err| {
-		println!("Failed to type-check:\n{}", err);
-		exit(1);
-	});
-	let webassembly = parsed.to_wasm_program();
-	let output_file = matches.value_of("OUTPUT").expect("No output file argument passed?");
-	let mut file = OpenOptions::new().create(true).write(true).truncate(true).open(output_file).unwrap_or_else(|err| {
-		println!("Failed to open file {}:\n{}", output_file, err);
-		exit(1);
-	});
-	let wat = webassembly.to_wat();
-	file.write_all(wat.as_bytes()).unwrap_or_else(|err| {
-		println!("Failed to write to file {}:\n{}", output_file, err);
-		exit(1);
-	});
+	// parsed.type_check().unwrap_or_else(|err| {
+	// 	println!("Failed to type-check:\n{}", err);
+	// 	exit(1);
+	// });
+	// let webassembly = parsed.to_wasm_program();
+	// let output_file = matches.value_of("OUTPUT").expect("No output file argument passed?");
+	// let mut file = OpenOptions::new().create(true).write(true).truncate(true).open(output_file).unwrap_or_else(|err| {
+	// 	println!("Failed to open file {}:\n{}", output_file, err);
+	// 	exit(1);
+	// });
+	// let wat = webassembly.to_wat();
+	// file.write_all(wat.as_bytes()).unwrap_or_else(|err| {
+	// 	println!("Failed to write to file {}:\n{}", output_file, err);
+	// 	exit(1);
+	// });
 }

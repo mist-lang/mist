@@ -9,6 +9,8 @@ use nom::character::complete::digit1;
 use nom::character::complete::multispace0;
 use nom::character::complete::multispace1;
 
+named!(pub semicolon<&str, &str>, recognize!(tuple!(multispace0, tag!(";"))));
+
 impl File {
 	pub fn read(path: impl AsRef<Path>) -> Result<Self, String> {
 		let contents = match fs::read_to_string(path) {
@@ -43,7 +45,7 @@ impl Ident {
 impl Item {
 	named!(pub parse<&str, Item>,
 		alt!(
-			map!(Fun::parse, |fun| Item::Fun(Box::new(fun)))
+			map!(Fun::parse, Item::Fun)
 		)
 	);
 }
@@ -67,9 +69,10 @@ impl Fun {
 			preceded!(pair!(tag!(":"), multispace0), Type::name),
 			delimited!(multispace0, tag!("="), multispace0),
 			Expr::parse,
-			recognize!(tuple!(multispace0, tag!(";")))
+			semicolon
 		), |(_, name, out_ty, _, expr, _)| Fun {
 			name,
+			params: Vec::new(),
 			out_ty,
 			eval: Either::Left(expr),
 		})
@@ -100,6 +103,8 @@ impl Expr {
 			map!(Expr::boolean, Expr::Bool)
 			| map!(Expr::int, Expr::Int)
 			| map!(If::parse, Expr::If)
+			| map!(Expr::call, |(name, args)| Expr::Call(name, args))
+			| map!(Ident::parse, Expr::VarRef)
 		)
 	);
 
@@ -112,6 +117,18 @@ impl Expr {
 
 	named!(int<&str, u64>,
 		map!(digit1, |input| input.parse::<u64>().unwrap())
+	);
+
+	named!(call<&str, (Ident, Vec<Expr>)>,
+		tuple!(
+			Ident::parse,
+			many0!(
+				preceded!(
+					multispace1,
+					Expr::parse
+				)
+			)
+		)
 	);
 }
 

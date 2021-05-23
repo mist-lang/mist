@@ -1,5 +1,6 @@
 mod compile;
 mod parse;
+mod load_hir;
 mod types;
 
 use either::Either;
@@ -14,22 +15,25 @@ pub struct Ident(String);
 
 #[derive(Debug)]
 pub enum Item {
-	Fun(Box<Fun>),
+	Fun(Fun),
 }
 
 #[derive(Clone, Debug)]
 pub enum Type {
 	Int,
 	Bool,
-	Tuple(Vec<Type>),
 }
 
 #[derive(Debug)]
 pub struct Fun {
 	name: Ident,
+	params: Vec<Var>,
 	out_ty: Type,
 	eval: Either<Expr, Block>,
 }
+
+#[derive(Debug)]
+pub struct Var(Ident, Type);
 
 /// Rust-style blocks
 #[derive(Debug)]
@@ -47,7 +51,9 @@ pub enum Stmt {
 pub enum Expr {
 	Bool(bool),
 	Int(u64),
+	VarRef(Ident),
 	If(If),
+	Call(Ident, Vec<Expr>),
 }
 
 #[derive(Debug)]
