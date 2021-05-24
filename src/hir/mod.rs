@@ -39,7 +39,6 @@ pub struct Fun(Arc<RwLock<(Vec<Dec>, Block)>>);
 
 impl Fun {
 	pub fn new(scope: Scope, params: Vec<Dec>, stmts: Vec<Stmt>) -> Fun {
-		params.iter().for_each(|param| todo!());
 		Fun(Arc::new(RwLock::new((params, Block(scope, stmts)))))
 	}
 }
@@ -49,6 +48,10 @@ pub struct Dec(Arc<(Option<String>, RwLock<Type>)>);
 impl Dec {
 	pub fn new(name: String, ty: Type) -> Dec {
 		Dec(Arc::new((Some(name), RwLock::new(ty))))
+	}
+
+	pub fn gen(ty: Type) -> Dec {
+		Dec::new("".to_string(), ty)
 	}
 }
 
