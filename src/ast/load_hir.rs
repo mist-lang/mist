@@ -2,13 +2,13 @@ use std::sync::Arc;
 use std::sync::RwLock;
 
 use super::*;
-use crate::hir_new as hir;
+use crate::hir;
 
 type Result<T> = std::result::Result<T, String>;
 
 impl File {
 	pub fn compile_hir(&self) -> Result<hir::Program> {
-		let mut hir_scope = hir::Scope::with_builtins();
+		let hir_scope = hir::Scope::with_builtins();
 		self.items.iter()
 			.map(|item| Ok(match item {
 				Item::Fun(fun) => hir_scope.insert(
@@ -23,7 +23,10 @@ impl File {
 
 impl Var {
 	pub fn to_hir_dec(&self) -> hir::Dec {
-		hir::Dec(self.0.0.clone(), self.1.to_hir_type())
+		hir::Dec {
+			name: self.0.0.clone(),
+			ty: self.1.to_hir_type(),
+		}
 	}
 }
 
@@ -45,7 +48,7 @@ impl Fun {
 			Either::Left(expr) => expr.compile_hir(&vars, scope),
 			Either::Right(block) => block.compile_hir(&vars, scope),
 		}?;
-		Ok(hir::Fun::new(params, Box::new(expr)))
+		Ok(hir::Fun::new(params, Box::new(expr), self.out_ty.to_hir_type()))
 	}
 }
 
@@ -64,10 +67,10 @@ impl Expr {
 		Ok(match self {
 			Expr::Bool(b) => hir::Expr::Const(hir::Const::Bool(*b)),
 			Expr::Int(i) => hir::Expr::Const(hir::Const::Int(*i)),
-			Expr::VarRef(ident) => hir::Expr::Var(vars.iter().find(|dec| dec.0 == ident.0).ok_or_else(|| format!("{} isn't defined", ident.0))?.clone()),
+			Expr::VarRef(ident) => hir::Expr::Var(vars.iter().find(|dec| dec.name == ident.0).ok_or_else(|| format!("{} isn't defined", ident.0))?.clone()),
 			Expr::If(if_expr) => if_expr.compile_hir(vars, scope)?,
 			Expr::Call(fun_name, args) => {
-				let fun = match vars.iter().find(|var| var.0 == fun_name.0) {
+				let fun = match vars.iter().find(|var| var.name == fun_name.0) {
 					Some(_lam) => todo!(),
 					None => scope.get(&fun_name.0).ok_or_else(|| format!("function {} not found", fun_name.0)),
 				}?;
@@ -87,7 +90,7 @@ impl If {
 				Either::Left(block) => block.compile_hir(vars, scope),
 				Either::Right(elif) => elif.compile_hir(vars, scope),
 			}?;
-			hir::Expr::If(Box::new(cond), Box::new(then), Box::new(els))
+			hir::Expr::If(Box::new(cond), None, Box::new(then), Box::new(els))
 		})
 	}
 }

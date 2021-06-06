@@ -1,69 +1,53 @@
-mod builtin;
+mod expr;
+mod fun;
+mod program;
 mod scope;
-mod type_check;
+pub use scope::Scope;
+mod types;
 
 use std::sync::Arc;
 use std::sync::RwLock;
 
-pub use scope::Scope;
+#[derive(Debug)]
+pub struct Program(Scope);
 
-use once_cell::sync::Lazy;
-
-pub static PROGRAM: Lazy<Program> = Lazy::new(|| todo!());
-
-pub struct Ident(String);
-
-pub struct Program {
-	root_scope: Scope,
-	pub main_scope: Scope,
+#[derive(Debug, Clone)]
+pub enum Item {
+	Fun(Arc<RwLock<Fun>>),
 }
 
-pub struct Block(Scope, Vec<Stmt>);
-
-pub enum Const {
-	Int(u64),
-	Bool(bool),
+#[derive(Debug)]
+pub struct Fun {
+	pub params: Vec<Arc<Dec>>,
+	pub expr: Box<Expr>,
+	fn_ty: Type,
 }
 
+#[derive(Debug, Clone)]
 pub enum Type {
 	Int,
 	Bool,
+	Arrow(Box<Type>, Box<Type>),
+	Tuple(Vec<Type>),
 }
 
-pub enum Item {
-	Fun(Fun),
-	Var(Dec),
+#[derive(Debug, Clone)]
+pub struct Dec {
+	pub name: String,
+	pub ty: Type,
 }
 
-pub struct Fun(Arc<RwLock<(Vec<Dec>, Block)>>);
-
-impl Fun {
-	pub fn new(scope: Scope, params: Vec<Dec>, stmts: Vec<Stmt>) -> Fun {
-		Fun(Arc::new(RwLock::new((params, Block(scope, stmts)))))
-	}
-}
-
-pub struct Dec(Arc<(Option<String>, RwLock<Type>)>);
-
-impl Dec {
-	pub fn new(name: String, ty: Type) -> Dec {
-		Dec(Arc::new((Some(name), RwLock::new(ty))))
-	}
-
-	pub fn gen(ty: Type) -> Dec {
-		Dec::new("".to_string(), ty)
-	}
-}
-
-pub enum Stmt {
-	Let(Dec, Expr),
-	Reassign(Dec, Expr),
-}
-
+#[derive(Debug, Clone)]
 pub enum Expr {
-	Call(Fun, Vec<Ref>),
-	If(Vec<(Ref, Block)>),
-	Ref(Ref),
+	Const(Const),
+	Let(Arc<Dec>, Box<Expr>, Box<Expr>),
+	Call(Item, Vec<Expr>),
+	Var(Arc<Dec>),
+	If(Box<Expr>, Option<Type>, Box<Expr>, Box<Expr>),
 }
 
-pub struct Ref();
+#[derive(Debug, Clone)]
+pub enum Const {
+	Bool(bool),
+	Int(u64),
+}

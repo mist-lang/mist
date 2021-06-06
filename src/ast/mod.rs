@@ -1,7 +1,5 @@
-mod compile;
 mod parse;
 mod load_hir;
-mod types;
 
 use either::Either;
 

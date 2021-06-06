@@ -14,23 +14,30 @@ fn main() {
 	).get_matches();
 
 	let input_file = matches.value_of("INPUT").expect("No input file argument passed?");
-	let mut parsed = mist::ast::File::read(input_file).unwrap_or_else(|err| {
+	let parsed = mist::ast::File::read(input_file).unwrap_or_else(|err| {
 		println!("Failed to parse file:\n{}", err);
 		exit(1);
 	});
-	// parsed.type_check().unwrap_or_else(|err| {
-	// 	println!("Failed to type-check:\n{}", err);
-	// 	exit(1);
-	// });
-	// let webassembly = parsed.to_wasm_program();
-	// let output_file = matches.value_of("OUTPUT").expect("No output file argument passed?");
-	// let mut file = OpenOptions::new().create(true).write(true).truncate(true).open(output_file).unwrap_or_else(|err| {
-	// 	println!("Failed to open file {}:\n{}", output_file, err);
-	// 	exit(1);
-	// });
-	// let wat = webassembly.to_wat();
-	// file.write_all(wat.as_bytes()).unwrap_or_else(|err| {
-	// 	println!("Failed to write to file {}:\n{}", output_file, err);
-	// 	exit(1);
-	// });
+	let hir = parsed.compile_hir().unwrap_or_else(|err| {
+		println!("Failed to load HIR:\n{}", err);
+		exit(1);
+	});
+	hir.type_check().unwrap_or_else(|err| {
+		println!("Failed to type-check:\n{}", err);
+		exit(1);
+	});
+	let wat_ast = hir.to_wasm().unwrap_or_else(|err| {
+		println!("Failed to load WebAssembly:\n{}", err);
+		exit(1);
+	});
+	let output_file = matches.value_of("OUTPUT").expect("No output file argument passed?");
+	let mut file = OpenOptions::new().create(true).write(true).truncate(true).open(output_file).unwrap_or_else(|err| {
+		println!("Failed to open file {}:\n{}", output_file, err);
+		exit(1);
+	});
+	let wat_string = wat_ast.to_wat();
+	file.write_all(wat_string.as_bytes()).unwrap_or_else(|err| {
+		println!("Failed to write to file {}:\n{}", output_file, err);
+		exit(1);
+	});
 }

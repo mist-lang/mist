@@ -36,11 +36,15 @@ impl Func {
 	pub fn to_wat(&self) -> String {
 		static TEMPLATES: Lazy<Handlebars> = Lazy::new(|| {
 			let mut bars = Handlebars::new();
-			bars.register_template_string("func", "
+			bars.register_template_string("func-non-void", "
 (func ${{name}} (result {{result}})
 	{{expr}}
 )
 ").unwrap();
+			bars.register_template_string("func-void", "
+(func ${{name}}
+	{{expr}}
+)").unwrap();
 			bars
 		});
 
@@ -48,7 +52,14 @@ impl Func {
 		tree.insert("name", self.name.clone());
 		tree.insert("result", format!("{}", self.result));
 		tree.insert("expr", self.expr.to_wat());
-		TEMPLATES.render("func", &tree).unwrap()
+		let template = match &self.result {
+			Type::None => "func-void",
+			ty => {
+				tree.insert("result", format!("{}", ty));
+				"func-non-void"
+			}
+		};
+		TEMPLATES.render(template, &tree).unwrap()
 	}
 }
 
@@ -56,6 +67,7 @@ impl fmt::Display for Type {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		use Type::*;
 		match self {
+			None => write!(f, "<void>"),
 			I32 => write!(f, "i32"),
 		}
 	}
@@ -76,7 +88,7 @@ impl Expr {
 ").unwrap();
 			bars.register_template_string("if-stmt", "\
 (if
-	({{cond}})
+	{{cond}}
 	(then {{then}})
 	(else {{el}})
 )
@@ -97,11 +109,14 @@ impl Expr {
 				"const"
 			},
 			If(cond, ty, then, el) => {
-				let fmt = if let Some(ty) = ty {
-					data.insert("ty", format!("{}", ty));
-					"if-expr"
-				} else {
-					"if-stmt"
+				let fmt = match ty {
+					Type::None => {
+						"if-stmt"
+					},
+					_ => {
+						data.insert("ty", format!("{}", ty));
+						"if-expr"
+					}
 				};
 				data.insert("cond", cond.to_wat());
 				data.insert("then", then.to_wat());
