@@ -25,8 +25,7 @@ pub enum Type {
 #[derive(Debug)]
 pub struct Fun {
 	name: Ident,
-	params: Vec<Var>,
-	out_ty: Type,
+	arrow: Vec<(Option<Ident>, Type)>,
 	eval: Either<Expr, Block>,
 }
 

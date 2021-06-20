@@ -52,7 +52,7 @@ impl Item {
 
 impl Type {
 	// TODO: `parse` is reserved for parsing type declarations
-
+	// TODO: | map!(separated_list1!(delimited!(multispace0, tag!(","), multispace0), Type::name), Type::Tuple)
 	named!(pub name<&str, Type>,
 		alt!(
 			value!(Type::Int, tag!("int"))
@@ -66,16 +66,75 @@ impl Fun {
 		map!(tuple!(
 			delimited!(multispace0, tag!("fun"), multispace0),
 			Ident::parse,
-			preceded!(pair!(tag!(":"), multispace0), Type::name),
+			delimited!(multispace0, tag!(":"), multispace0),
+			Fun::ty,
 			delimited!(multispace0, tag!("="), multispace0),
 			Expr::parse,
-			semicolon
-		), |(_, name, out_ty, _, expr, _)| Fun {
+			preceded!(multispace0, semicolon)
+		), |(_, name, _, arrow, _, expr, _)| Fun {
 			name,
-			params: Vec::new(),
-			out_ty,
+			arrow,
 			eval: Either::Left(expr),
 		})
+	);
+
+	// name1 Type1 name2 Type2 Type3 Type4 Type5
+	// ^========= pt 1 ======^ ^====2====^ ^=3=^
+	// (name1: Type1) -> (name2: Type2) -> Type3 -> Type4 -> Type5
+	// (name1: Type1) ->
+	// Type5
+	// TODO: ensure that parts 1 and 2 function correctly,
+	// we know that the last part works because `fun main: int` parses
+	// correctly but we don't know if parameters work
+	named!(ty<&str, Vec<(Option<Ident>, Type)>>,
+		map!(tuple!(
+			separated_list0!(
+				delimited!(multispace0, tag!("->"), multispace0),
+				Fun::param
+			),
+			many0!(terminated!(
+				Type::name,
+				delimited!(multispace0, tag!("->"), multispace0)
+			)),
+			Type::name
+		), |(params, arrow_tys, final_ret)| {
+			params.into_iter()
+				.map(|(name, ty)| (Some(name), ty))
+				.chain(arrow_tys.into_iter().map(|ty| (None, ty)))
+				.chain(Some((None, final_ret)))
+				.collect()
+		})
+	);
+
+	// (name1: Type1)
+	// (name2: Type2, name3: Type3)
+	// (name4: Type2,)
+	named!(param<&str, (Ident, Type)>,
+		map!(
+			delimited!(
+				tuple!(tag!("("), multispace0),
+				separated_list0!(
+					tag!(","),
+					delimited!(
+						multispace0,
+						tuple!(
+							Ident::parse,
+							delimited!(multispace0, tag!(":"), multispace0),
+							Type::name
+						),
+						multispace0
+					)
+				),
+				tuple!(multispace0, tag!(")")
+			)
+		), |_| todo!())
+	);
+
+	named!(fn_arrow<&str, Vec<Type>>,
+		separated_list1!(
+			delimited!(multispace0, tag!("->"), multispace0),
+			Type::name
+		)
 	);
 }
 

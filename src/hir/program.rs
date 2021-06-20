@@ -12,7 +12,7 @@ impl Program {
 
 impl Program {
 	pub fn type_check(&self) -> Result<()> {
-		let main_ret_ty = Type::Arrow(Box::new(Type::Tuple(vec![])), Box::new(Type::Int));
+		let main_ret_ty = Box::new(Type::Int);
 		for key in self.0.keys() {
 			match (key.as_str(), self.0.get(&key).unwrap()) {
 				("main", Item::Fun(fun)) => {

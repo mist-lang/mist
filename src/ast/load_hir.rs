@@ -42,13 +42,28 @@ impl Type {
 impl Fun {
 	// vars is for once we add lambdas, which is soon!
 	pub fn compile_hir(&self, vars: &Vec<Arc<hir::Dec>>, scope: &hir::Scope) -> Result<hir::Fun> {
-		let params = self.params.iter().map(Var::to_hir_dec).map(Arc::new).collect::<Vec<_>>();
+		let params: Vec<_> = self.arrow.iter()
+			.take_while(|(name, _)| name.is_some())
+			.map(|(name, ty)| Arc::new(hir::Dec {
+				name: name.as_ref().unwrap().0.to_owned(),
+				ty: ty.to_hir_type(),
+			}))
+			.collect();
 		let vars: Vec<_> = params.iter().map(Arc::clone).chain(vars.into_iter().map(Arc::clone)).collect();
+		let ret_ty = self.arrow.iter()
+			.skip_while(|(name, _)| name.is_some())
+			.map(|(_, ty)| Box::new(ty.to_hir_type()))
+			.reduce(|l, r| Box::new(hir::Type::Arrow(l, r)))
+			.ok_or_else(|| format!("fun {} must have a return type", self.name.0))?;
 		let expr = match self.eval.as_ref() {
 			Either::Left(expr) => expr.compile_hir(&vars, scope),
 			Either::Right(block) => block.compile_hir(&vars, scope),
 		}?;
-		Ok(hir::Fun::new(params, Box::new(expr), self.out_ty.to_hir_type()))
+		Ok(hir::Fun {
+			params,
+			expr: Box::new(expr),
+			ret_ty,
+		})
 	}
 }
 

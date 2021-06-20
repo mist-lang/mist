@@ -20,8 +20,31 @@ pub enum Item {
 pub struct Fun {
 	pub params: Vec<Arc<Dec>>,
 	pub expr: Box<Expr>,
-	fn_ty: Type,
+	pub ret_ty: Box<Type>,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Debug, Clone)]
 pub enum Type {
