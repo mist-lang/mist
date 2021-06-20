@@ -1,3 +1,4 @@
+mod dec;
 mod expr;
 mod fun;
 mod program;
@@ -18,33 +19,10 @@ pub enum Item {
 
 #[derive(Debug)]
 pub struct Fun {
-	pub params: Vec<Arc<Dec>>,
+	pub params: Vec<Dec>,
 	pub expr: Box<Expr>,
 	pub ret_ty: Box<Type>,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #[derive(Debug, Clone)]
 pub enum Type {
@@ -55,7 +33,10 @@ pub enum Type {
 }
 
 #[derive(Debug, Clone)]
-pub struct Dec {
+pub struct Dec(Arc<DecInner>);
+
+#[derive(Debug)]
+struct DecInner {
 	pub name: String,
 	pub ty: Type,
 }
@@ -63,10 +44,23 @@ pub struct Dec {
 #[derive(Debug, Clone)]
 pub enum Expr {
 	Const(Const),
-	Let(Arc<Dec>, Box<Expr>, Box<Expr>),
-	Call(Item, Vec<Expr>),
-	Var(Arc<Dec>),
-	If(Box<Expr>, Option<Type>, Box<Expr>, Box<Expr>),
+	/// LISP-style let binding
+	Let {
+		dec: Dec,
+		assign: Box<Expr>,
+		cont: Box<Expr>,
+	},
+	Call {
+		fun: Item,
+		args: Vec<Expr>,
+	},
+	Var(Dec),
+	If {
+		cond: Box<Expr>,
+		out_ty: Option<Type>,
+		then: Box<Expr>,
+		els: Box<Expr>,
+	},
 }
 
 #[derive(Debug, Clone)]
