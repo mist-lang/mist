@@ -1,27 +1,60 @@
 use either::Either;
 
+mod export;
+mod func;
+mod import;
+mod index;
+mod instr;
+mod mem;
 mod module;
+mod program;
+mod types;
+
+pub trait WasmItem {
+	fn to_wat(&self, indent: usize) -> String;
+
+	fn indented(&self, indent: usize) -> String {
+		let mut builder = String::new();
+		self.indent(indent, &mut builder);
+		builder
+	}
+
+	fn indent<'a>(&self, indent: usize, builder: &'a mut String) -> &'a mut String {
+		for _ in 0..indent {
+			builder.push(' ');
+		}
+		builder
+	}
+}
+
+#[derive(Debug)]
+pub struct Program(pub Vec<Module>);
 
 /// basically just represents the `$` before the given symbol.
+#[derive(Debug)]
 pub enum Index {
+	None,
 	Name(&'static str),
 	Number(u32),
 }
 
+#[derive(Debug)]
 pub struct Module {
-	imports: Vec<Import>,
-	exports: Vec<Export>,
-	mems: Vec<Memory>,
-	funcs: Vec<Func>,
-	start: Index,
+	pub imports: Vec<Import>,
+	pub exports: Vec<Export>,
+	pub mems: Vec<Memory>,
+	pub funcs: Vec<Func>,
+	pub start: Index,
 }
 
+#[derive(Debug)]
 pub struct Import {
 	module_name: &'static str,
 	name: &'static str,
 	desc: ImportDesc,
 }
 
+#[derive(Debug)]
 pub enum ImportDesc {
 	Func(Index, FuncType),
 	Table(Index, /* TODO */),
@@ -29,11 +62,13 @@ pub enum ImportDesc {
 	Global(Index, /* TODO */),
 }
 
+#[derive(Debug)]
 pub struct Export {
 	name: &'static str,
 	desc: ExportDesc,
 }
 
+#[derive(Debug)]
 pub enum ExportDesc {
 	Func(Either<Index, Func>),
 	Table(Index),
@@ -41,35 +76,44 @@ pub enum ExportDesc {
 	Global(Index),
 }
 
-pub struct Memory(Limits);
+#[derive(Debug)]
+pub struct Memory(pub Limits);
 
+#[derive(Debug)]
 pub struct Limits(u32, Option<u32>);
 
+#[derive(Debug)]
 pub struct Func {
-	name: Index,
-	typeuse: FuncType,
-	locals: Vec<Local>,
-	instrs: Vec<Instr>,
+	pub name: Index,
+	pub typeuse: FuncType,
+	pub locals: Vec<Local>,
+	pub instrs: Vec<Instr>,
 }
 
+#[derive(Debug)]
 pub struct FuncType {
-	params: Vec<Param>,
-	ret_ty: Vec<Result>,
+	pub params: Vec<Param>,
+	pub ret_ty: Vec<Result>,
 }
 
-pub struct Param(Index, ValType);
+#[derive(Debug)]
+pub struct Param(pub Index, pub ValType);
 
-pub struct Result(ValType);
+#[derive(Debug)]
+pub struct Result(pub ValType);
 
+#[derive(Debug)]
 pub struct Local {
 	name: Index,
 	valtype: ValType,
 }
 
+#[derive(Debug)]
 pub enum ValType {
 	Num(NumType),
 }
 
+#[derive(Debug)]
 pub enum NumType {
 	I32,
 	I64,
@@ -77,17 +121,20 @@ pub enum NumType {
 	F64,
 }
 
+#[derive(Debug)]
 pub enum HeapType {
 	Func,
 	Extern,
 }
 
+#[derive(Debug)]
 pub enum Instr {
 	Plain(PlainInstr),
 	Block(BlockInstr),
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum PlainInstr {
 	unreachable,
 	nop,
@@ -113,6 +160,7 @@ pub enum PlainInstr {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum RefInstr {
 	null(HeapType),
 	is_null,
@@ -120,6 +168,7 @@ pub enum RefInstr {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum LocalInstr {
 	get(Index),
 	set(Index),
@@ -127,12 +176,14 @@ pub enum LocalInstr {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum GlobalInstr {
 	get(Index),
 	set(Index),
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum I32Instr {
 	r#const(i32),
 	clz,
@@ -181,6 +232,7 @@ pub enum I32Instr {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum I64Instr {
 	r#const(i64),
 	clz,
@@ -231,6 +283,7 @@ pub enum I64Instr {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum F32Instr {
 	r#const(f32),
 	abs,
@@ -258,6 +311,7 @@ pub enum F32Instr {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum F64Instr {
 	r#const(f64),
 	abs,
@@ -284,6 +338,7 @@ pub enum F64Instr {
 	// TODO: stores
 }
 
+#[derive(Debug)]
 pub enum BlockType {
 	None,
 	Result(Result),
@@ -291,6 +346,7 @@ pub enum BlockType {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug)]
 pub enum BlockInstr {
 	block(BlockType, Vec<Instr>),
 	r#loop(BlockType, Vec<Instr>),

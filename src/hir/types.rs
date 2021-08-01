@@ -1,4 +1,4 @@
-use crate::wasm;
+use crate::webassembly;
 use super::Type;
 
 impl Type {
@@ -27,14 +27,25 @@ impl Type {
 }
 
 impl Type {
-	pub fn to_wasm(&self) -> wasm::Type {
+
+	pub fn to_wasm(&self) -> webassembly::ValType {
+		use webassembly::ValType;
+		use webassembly::NumType;
 		match self {
-			Type::Bool => wasm::Type::I32,
-			Type::Int => wasm::Type::I32,
-			Type::Tuple(tys) if tys.len() == 0 => wasm::Type::None,
-			Type::Tuple(tys) if tys.len() == 1 => tys[0].to_wasm(),
-			_ => todo!(),
+			Type::Bool => ValType::Num(NumType::I32),
+			Type::Int => ValType::Num(NumType::I32),
+			_ => todo!()
 		}
 	}
+
+	// pub fn to_wasm(&self) -> wasm::Type {
+	// 	match self {
+	// 		Type::Bool => wasm::Type::I32,
+	// 		Type::Int => wasm::Type::I32,
+	// 		Type::Tuple(tys) if tys.len() == 0 => wasm::Type::None,
+	// 		Type::Tuple(tys) if tys.len() == 1 => tys[0].to_wasm(),
+	// 		_ => todo!(),
+	// 	}
+	// }
 }
 

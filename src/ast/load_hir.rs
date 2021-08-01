@@ -58,6 +58,7 @@ impl Fun {
 			Either::Right(block) => block.compile_hir(&vars, scope),
 		}?;
 		Ok(hir::Fun {
+			name: self.name.0.clone(),
 			params,
 			expr: Box::new(expr),
 			ret_ty,

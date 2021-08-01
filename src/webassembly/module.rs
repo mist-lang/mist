@@ -1,6 +1,29 @@
 use super::*;
 
-impl Module {
+impl WasmItem for Module {
+	fn to_wat(&self, _indent: usize) -> String {
+		let mut wat_out = String::new();
+		wat_out.push_str("(module\n");
+		wat_out.push_str(format!("  (start {})\n", self.start).as_str());
+		self.imports.iter().for_each(|import| {
+			wat_out.push_str(import.to_wat(2).as_str());
+			wat_out.push('\n');
+		});
+		self.exports.iter().for_each(|export| {
+			wat_out.push_str(export.to_wat(2).as_str());
+			wat_out.push('\n');
+		});
+		self.mems.iter().for_each(|mem| {
+			wat_out.push_str(mem.to_wat(2).as_str());
+			wat_out.push('\n');
+		});
+		self.funcs.iter().for_each(|func| {
+			wat_out.push_str(func.to_wat(2).as_str());
+			wat_out.push('\n');
+		});
+		wat_out.push_str(")\n");
+		wat_out
+	}
 }
 
 impl Default for Module {
@@ -15,7 +38,7 @@ impl Default for Module {
 						Index::Name("proc_exit"),
 						FuncType {
 							params: vec![
-								Param(Index::Name(""), ValType::Num(NumType::I32)),
+								Param(Index::None, ValType::Num(NumType::I32)),
 							],
 							ret_ty: vec![],
 						},

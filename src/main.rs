@@ -5,6 +5,8 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::process::exit;
 
+use mist::webassembly::WasmItem;
+
 fn main() {
 	let matches = clap_app!(mistc =>
 		(version: "1.0")
@@ -35,7 +37,7 @@ fn main() {
 		println!("Failed to open file {}:\n{}", output_file, err);
 		exit(1);
 	});
-	let wat_string = wat_ast.to_wat();
+	let wat_string = wat_ast.to_wat(0);
 	file.write_all(wat_string.as_bytes()).unwrap_or_else(|err| {
 		println!("Failed to write to file {}:\n{}", output_file, err);
 		exit(1);

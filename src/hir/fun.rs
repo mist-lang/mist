@@ -1,4 +1,4 @@
-use crate::wasm;
+use crate::webassembly;
 
 use super::*;
 
@@ -13,15 +13,32 @@ impl Fun {
 }
 
 impl Fun {
-	pub fn to_wasm(&self, name: String) -> Result<wasm::Func> {
-		let mut ret_ty = self.ret_ty.as_ref();
-		while let Type::Arrow(_, ret) = ret_ty {
-			ret_ty = ret;
-		}
-		Ok(wasm::Func {
-			name,
-			result: ret_ty.to_wasm(),
-			expr: self.expr.to_wasm()?,
+	pub fn to_wasm(&self) -> Result<webassembly::Func> {
+		let params: Vec<_> = self.params.iter()
+			.map(|p| webassembly::Param(
+				webassembly::Index::Name(Box::leak(String::from(p.name()).into_boxed_str())),
+				p.ty().to_wasm(),
+			))
+			.collect();
+		let ret_ty = vec![webassembly::Result(self.ret_ty.to_wasm())];
+		let instrs = self.expr.to_wasm()?;
+		Ok(webassembly::Func {
+			name: webassembly::Index::Name(Box::leak(self.name.clone().into_boxed_str())),
+			typeuse: webassembly::FuncType {
+				params,
+				ret_ty,
+			},
+			locals: vec![],
+			instrs,
 		})
+		// let mut ret_ty = self.ret_ty.as_ref();
+		// while let Type::Arrow(_, ret) = ret_ty {
+		// 	ret_ty = ret;
+		// }
+		// Ok(wasm::Func {
+		// 	name,
+		// 	result: ret_ty.to_wasm(),
+		// 	expr: self.expr.to_wasm()?,
+		// })
 	}
 }

@@ -1,4 +1,4 @@
-use crate::wasm;
+use crate::webassembly;
 
 use super::*;
 
@@ -29,13 +29,13 @@ impl Program {
 }
 
 impl Program {
-	pub fn to_wasm(&self) -> Result<wasm::Program> {
-		let mut program = wasm::Program::default();
+	pub fn to_wasm(&self) -> Result<webassembly::Program> {
+		let mut main_module = webassembly::Module::default();
 		for key in self.0.keys() {
-			match self.0.get(&key).unwrap() {
-				Item::Fun(fun) => program.funcs.push(fun.read().expect("poison").to_wasm(key)?),
+			match self.0.get(&key).expect("key that was from keys() doesn't exist") {
+				Item::Fun(fun) => main_module.funcs.push(fun.read().expect("poison").to_wasm()?),
 			}
 		}
-		Ok(program)
+		Ok(webassembly::Program(vec![main_module]))
 	}
 }

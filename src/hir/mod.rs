@@ -19,6 +19,7 @@ pub enum Item {
 
 #[derive(Debug)]
 pub struct Fun {
+	pub name: String,
 	pub params: Vec<Dec>,
 	pub expr: Box<Expr>,
 	pub ret_ty: Box<Type>,
